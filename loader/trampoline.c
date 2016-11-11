@@ -725,7 +725,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
     // these are device procs which need to go through a loader terminator.
     // This needs to occur if the loader needs to perform some work prior
     // to passing the work along to the ICD.
-    loader_override_terminating_device_proc(*pDevice, &dev->loader_dispatch);
+    loader_override_terminating_device_proc(dev);
 
 out:
 

@@ -3270,11 +3270,9 @@ loader_gpa_instance_internal(VkInstance inst, const char *pName) {
     return NULL;
 }
 
-void loader_override_terminating_device_proc(
-    VkDevice device, struct loader_dev_dispatch_table *disp_table) {
-    struct loader_device *dev;
-    struct loader_icd_term *icd_term =
-        loader_get_icd_and_device(device, &dev, NULL);
+void loader_override_terminating_device_proc(struct loader_device *dev) {
+    VkLayerDispatchTable *disp_table = &dev->loader_dispatch.core_dispatch;
+    struct loader_icd_term *icd_term = dev->phys_dev_term->this_icd_term;
 
     // NOTE: Device Funcs needing Trampoline/Terminator.
     // Overrides for device functions needing a trampoline and
@@ -3282,22 +3280,21 @@ void loader_override_terminating_device_proc(
     // through a terminator before hitting the ICD.  This could be for
     // several reasons, but the main one is currently unwrapping an
     // object before passing the appropriate info along to the ICD.
-    if ((PFN_vkVoidFunction)disp_table->core_dispatch.CreateSwapchainKHR ==
-        (PFN_vkVoidFunction)icd_term->scanned_icd->GetInstanceProcAddr(
-            icd_term->instance, "vkCreateSwapchainKHR")) {
-        disp_table->core_dispatch.CreateSwapchainKHR =
-            terminator_vkCreateSwapchainKHR;
+    if ((PFN_vkVoidFunction)disp_table->CreateSwapchainKHR ==
+        (PFN_vkVoidFunction)icd_term->GetDeviceProcAddr(
+            dev->device, "vkCreateSwapchainKHR")) {
+        disp_table->CreateSwapchainKHR = terminator_vkCreateSwapchainKHR;
     }
-    if ((PFN_vkVoidFunction)disp_table->core_dispatch.DebugMarkerSetObjectTagEXT ==
-        (PFN_vkVoidFunction)icd_term->scanned_icd->GetInstanceProcAddr(
-            icd_term->instance, "vkDebugMarkerSetObjectTagEXT")) {
-        disp_table->core_dispatch.DebugMarkerSetObjectTagEXT =
+    if ((PFN_vkVoidFunction)disp_table->DebugMarkerSetObjectTagEXT ==
+        (PFN_vkVoidFunction)icd_term->GetDeviceProcAddr(
+            dev->device, "vkDebugMarkerSetObjectTagEXT")) {
+        disp_table->DebugMarkerSetObjectTagEXT =
             terminator_DebugMarkerSetObjectTagEXT;
     }
-    if ((PFN_vkVoidFunction)disp_table->core_dispatch.DebugMarkerSetObjectNameEXT ==
-        (PFN_vkVoidFunction)icd_term->scanned_icd->GetInstanceProcAddr(
-            icd_term->instance, "vkDebugMarkerSetObjectNameEXT")) {
-        disp_table->core_dispatch.DebugMarkerSetObjectNameEXT =
+    if ((PFN_vkVoidFunction)disp_table->DebugMarkerSetObjectNameEXT ==
+        (PFN_vkVoidFunction)icd_term->GetDeviceProcAddr(
+            dev->device, "vkDebugMarkerSetObjectNameEXT")) {
+        disp_table->DebugMarkerSetObjectNameEXT =
             terminator_DebugMarkerSetObjectNameEXT;
     }
 }
@@ -4353,6 +4350,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(
     struct loader_device *dev = (struct loader_device *)*pDevice;
     PFN_vkCreateDevice fpCreateDevice = icd_term->CreateDevice;
     struct loader_extension_list icd_exts;
+
+    dev->phys_dev_term = phys_dev_term;
 
     icd_exts.list = NULL;
 
