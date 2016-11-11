@@ -3276,26 +3276,27 @@ void loader_override_terminating_device_proc(
     struct loader_icd_term *icd_term =
         loader_get_icd_and_device(device, &dev, NULL);
 
+    // NOTE: Device Funcs needing Trampoline/Terminator.
     // Overrides for device functions needing a trampoline and
-    // a terminator because ertain device entry-points still need to go
+    // a terminator because certain device entry-points still need to go
     // through a terminator before hitting the ICD.  This could be for
     // several reasons, but the main one is currently unwrapping an
     // object before passing the appropriate info along to the ICD.
     if ((PFN_vkVoidFunction)disp_table->core_dispatch.CreateSwapchainKHR ==
-        (PFN_vkVoidFunction)icd_term->GetDeviceProcAddr(
-            device, "vkCreateSwapchainKHR")) {
+        (PFN_vkVoidFunction)icd_term->scanned_icd->GetInstanceProcAddr(
+            icd_term->instance, "vkCreateSwapchainKHR")) {
         disp_table->core_dispatch.CreateSwapchainKHR =
             terminator_vkCreateSwapchainKHR;
     }
     if ((PFN_vkVoidFunction)disp_table->core_dispatch.DebugMarkerSetObjectTagEXT ==
-        (PFN_vkVoidFunction)icd_term->GetDeviceProcAddr(
-            device, "vkDebugMarkerSetObjectTagEXT")) {
+        (PFN_vkVoidFunction)icd_term->scanned_icd->GetInstanceProcAddr(
+            icd_term->instance, "vkDebugMarkerSetObjectTagEXT")) {
         disp_table->core_dispatch.DebugMarkerSetObjectTagEXT =
             terminator_DebugMarkerSetObjectTagEXT;
     }
     if ((PFN_vkVoidFunction)disp_table->core_dispatch.DebugMarkerSetObjectNameEXT ==
-        (PFN_vkVoidFunction)icd_term->GetDeviceProcAddr(
-            device, "vkDebugMarkerSetObjectNameEXT")) {
+        (PFN_vkVoidFunction)icd_term->scanned_icd->GetInstanceProcAddr(
+            icd_term->instance, "vkDebugMarkerSetObjectNameEXT")) {
         disp_table->core_dispatch.DebugMarkerSetObjectNameEXT =
             terminator_DebugMarkerSetObjectNameEXT;
     }
@@ -3307,8 +3308,9 @@ loader_gpa_device_internal(VkDevice device, const char *pName) {
     struct loader_icd_term *icd_term =
         loader_get_icd_and_device(device, &dev, NULL);
 
+    // NOTE: Device Funcs needing Trampoline/Terminator.
     // Overrides for device functions needing a trampoline and
-    // a terminator because ertain device entry-points still need to go
+    // a terminator because certain device entry-points still need to go
     // through a terminator before hitting the ICD.  This could be for
     // several reasons, but the main one is currently unwrapping an
     // object before passing the appropriate info along to the ICD.

@@ -550,8 +550,9 @@ loader_lookup_device_dispatch_table(const VkLayerDispatchTable *table,
     if (!strcmp(name, "QueuePresentKHR"))
         return (void *)table->QueuePresentKHR;
 
+    // NOTE: Device Funcs needing Trampoline/Terminator.
     // Overrides for device functions needing a trampoline and
-    // a terminator because ertain device entry-points still need to go
+    // a terminator because certain device entry-points still need to go
     // through a terminator before hitting the ICD.  This could be for
     // several reasons, but the main one is currently unwrapping an
     // object before passing the appropriate info along to the ICD.
